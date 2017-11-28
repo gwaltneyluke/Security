@@ -4,7 +4,7 @@
 //  Description    : This is the implementaiton file for the spwgen443 password
 //                   generator program.  See assignment details.
 //
-//  Collaborators  : **TODO**: FILL ME IN
+//  Collaborators  : Luke Gwaltney, Jason Ling, Albert Wilson, Brian Young
 //  Last Modified  : **TODO**: FILL ME IN
 //
 
@@ -15,7 +15,7 @@ package main
 import ( 
 	"fmt"
 	"os"
-	"rand"
+	"math/rand"
 	"strconv"
 	"time"
 	"github.com/pborman/getopt"
@@ -38,7 +38,11 @@ var patternval string = `pattern (set of symbols defining password)
 
         Note: the pattern overrides other flags, e.g., -w`
 
-// You may want to create more global variables
+const LOWERCASE string = "abcdefghijklmnopqrstuvwxyz"
+const UPPERCASE string = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const ALLCASES string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const SPECIALS string = "~!@#$%^&*()-_=+{}[]:;/?<>,.|\\"
+const dictPath string = "usr/share/dict/words"
 
 //
 // Functions
@@ -58,6 +62,73 @@ var patternval string = `pattern (set of symbols defining password)
 func generatePasword(length int8, pattern string, webflag bool) string {
 
 	pwd := "" // Start with nothing and add code
+	var i int8 = 0
+
+	fmt.Printf("length is %d\n", length)
+
+	if length == 0 {
+		if pattern == "" {
+			length = 16
+			fmt.Println("length changed to 16")
+		} else {
+			length = int8(len(pattern))
+		}
+	}
+
+	if pattern == "" {
+		for i = 0; i < length; i++ {
+			pattern = pattern + "x"
+		}
+	}
+
+	for i = 0; i < length; i++ {
+		switch string(pattern[i]) {
+		case "x":
+			chartype := rand.Intn(3)
+			if chartype == 0 {
+				pwd += string(ALLCASES[rand.Intn(52)])
+			} else if chartype == 1 {
+				pwd += strconv.Itoa(rand.Intn(10))
+			} else {
+				pwd += string(SPECIALS[rand.Intn(29)])
+			}
+		case "d":
+			pwd += strconv.Itoa(rand.Intn(10))
+		case "c":
+			pwd += string(ALLCASES[rand.Intn(52)])
+		case "l":
+			pwd += string(LOWERCASE[rand.Intn(26)])
+		case "u":
+			pwd += string(UPPERCASE[rand.Intn(26)])
+		case "w":
+			dictFile = os.Open(dictPath)
+
+			if length > i+2 {
+				if l, err := strconv.ParseInt(pattern[i+1:i+2], 10, 8); err == nil {
+					// aqcuire word of length l
+				} else if l, err = strconv.ParseInt(string(pattern[i+1]), 10, 8); err == nil {
+					// acquire word of length l
+				} else {
+					// acquire any word
+				}
+			} else if length > i+1 {
+				if l, err := strconv.ParseInt(string(pattern[i+1]), 10, 8); err == nil {
+					// acquire word of length l
+				} else {
+					// acquire any word
+				}
+			} else {
+				//acquire any word
+			}
+
+			dictFile.Close()
+		case "s":
+			pwd += string(SPECIALS[rand.Intn(29)])
+		default:
+			fmt.Println("Invalid character in given pattern.");
+			return "NOPASSWORDCREATED"	// something went wrong
+		}
+	}
 
 	// Now return the password
 	return pwd
@@ -97,7 +168,7 @@ func main() {
 	// Normally, we we use getopt.Arg{#) to get the non-flag paramters
 
 	// Safety check length parameter
-	var plength int8 = 16
+	var plength int8 = 0
 	if *length != "" {
 		if _, err := strconv.Atoi(*length); err != nil {
 			fmt.Printf("Bad length passed in [%s]\n", *length)
@@ -105,6 +176,8 @@ func main() {
 			getopt.Usage()
 			os.Exit(-1)
 		}
+		pl, _ := strconv.Atoi(*length)
+		plength = int8(pl)
 		if plength <= 0 || plength > 64 {
 			plength = 16
 		}
